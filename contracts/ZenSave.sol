@@ -20,8 +20,14 @@ contract ZenSave {
     // El usuario puede retirar lo que ahorró
     function withdraw(uint256 amount) external {
         require(balances[msg.sender] >= amount, "Saldo insuficiente");
+        
+        // 1. Restamos el saldo (Patrón de seguridad CEI)
         balances[msg.sender] -= amount;
-        payable(msg.sender).transfer(amount);
+        
+        // 2. Enviamos el dinero usando .call (La forma moderna y segura)
+        (bool success, ) = payable(msg.sender).call{value: amount}("");
+        require(success, "Fallo al enviar los fondos");
+        
         emit Withdrawn(msg.sender, amount);
     }
 
