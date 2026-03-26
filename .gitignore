@@ -20,6 +20,7 @@
 /coverage
 
 /main.env
-/package.json
 /package-lock.json
 /tsconfig.json
+
+/.env
