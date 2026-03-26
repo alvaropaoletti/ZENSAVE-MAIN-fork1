@@ -18,9 +18,7 @@
 
 # Hardhat coverage reports
 /coverage
-
-/main.env
-/package-lock.json
+/build
 /tsconfig.json
 
 /.env
