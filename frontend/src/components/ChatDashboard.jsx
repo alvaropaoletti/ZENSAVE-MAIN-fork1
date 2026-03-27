@@ -1,30 +1,26 @@
 import React, { useState } from 'react';
-import InterventionCard from './InterventionCard'; // Importamos la tarjeta
+import InterventionCard from './InterventionCard';
 
-function ChatDashboard({ onNavigate }) {
+// 🚀 AÑADIDO: Recibimos userAddress y userData como props
+function ChatDashboard({ onNavigate, userAddress, userData }) {
   const [inputValue, setInputValue] = useState('');
-  // Estado para guardar los mensajes del chat
   const [messages, setMessages] = useState([
     { type: 'ai', text: "¡Hola! Soy Zen. ¿En qué gastaste hoy?" }
   ]);
-  // Estado para saber si la IA está "escribiendo"
   const [isTyping, setIsTyping] = useState(false);
-  // Estado para guardar el reto propuesto por la IA
   const [currentChallenge, setCurrentChallenge] = useState(null);
 
   const handleSend = async () => {
     if (!inputValue.trim()) return;
 
     const userText = inputValue;
-    setInputValue(''); // Limpiamos el input
+    setInputValue('');
     
-    // 1. Agregamos el mensaje del usuario al chat
     setMessages(prev => [...prev, { type: 'user', text: userText }]);
     setIsTyping(true);
-    setCurrentChallenge(null); // Limpiamos retos anteriores
+    setCurrentChallenge(null);
 
     try {
-      // 2. Hacemos la petición a tu servidor Flask
       const response = await fetch('http://127.0.0.1:5000/api/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -33,10 +29,7 @@ function ChatDashboard({ onNavigate }) {
 
       if (!response.ok) throw new Error("Error en el servidor");
 
-      // 3. Recibimos el JSON de la IA (Gemini)
       const data = await response.json();
-
-      // 4. Guardamos el reto para mostrar la InterventionCard
       setCurrentChallenge(data);
 
     } catch (error) {
@@ -47,13 +40,34 @@ function ChatDashboard({ onNavigate }) {
     }
   };
 
+  // 🛠️ Función auxiliar para acortar la dirección si no hay Alias
+  const formatAddress = (addr) => {
+    if (!addr) return "Desconectado";
+    return `${addr.substring(0, 6)}...${addr.substring(addr.length - 4)}`;
+  };
+
   return (
     <section className="app-screen active chat-screen">
       <header className="app-header">
-        {/* ... (Todo tu header queda igual) ... */}
-        <div className="header-left"><img src="https://via.placeholder.com/40" alt="Avatar" className="user-avatar" /></div>
-        <div className="header-center"><span className="balance-label">SALDO DISPONIBLE</span><span className="balance-value">$12,450.00</span></div>
-        <div className="header-right"><button className="wallet-icon">💳</button></div>
+        
+        {/* 🚀 MODIFICADO: Avatar dinámico con el Alias o la Dirección */}
+        <div className="header-left" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <img src="https://api.dicebear.com/7.x/identicon/svg?seed=Alejandro" alt="Avatar" className="user-avatar" style={{ borderRadius: '50%', width: '40px' }} />
+        </div>
+        
+        <div className="header-center">
+          {/* 🚀 MODIFICADO: Mostramos el Alias (si existe) o la dirección de la billetera conectada */}
+          <span className="balance-label">USUARIO CONECTADO</span>
+          <span className="balance-value" style={{ fontSize: '14px' }}>
+            {userData?.alias || formatAddress(userAddress)}
+          </span>
+        </div>
+        
+        <div className="header-right">
+          <button className="wallet-icon">
+            <span title={userAddress}>🟢</span> {/* Indicador visual de conexión */}
+          </button>
+        </div>
       </header>
 
       <div className="chat-title-area">
@@ -64,7 +78,6 @@ function ChatDashboard({ onNavigate }) {
       <main className="chat-container">
         <div className="chat-messages">
           
-          {/* Mapeamos el historial de mensajes */}
           {messages.map((msg, index) => (
             <div key={index} className={`message ${msg.type === 'ai' ? 'ai-message' : 'user-message'}`}>
               <div className="message-content">
@@ -73,7 +86,6 @@ function ChatDashboard({ onNavigate }) {
             </div>
           ))}
 
-          {/* Indicador de que la IA está pensando */}
           {isTyping && (
             <div className="message ai-message">
               <div className="message-content">
@@ -82,14 +94,14 @@ function ChatDashboard({ onNavigate }) {
             </div>
           )}
 
-          {/* Si hay un reto de la IA, mostramos la Tarjeta de Intervención */}
           {currentChallenge && (
             <InterventionCard 
               emotionText={currentChallenge.emotionText}
               proposalText={currentChallenge.proposalText}
               onAcceptReto={async () => {
-                // STICH: Aquí ejecutaremos el Smart Contract en Rootstock
-                console.log(`Ejecutando contrato: Bloquear ${currentChallenge.monto_dca} ${currentChallenge.token}`);
+                // AQUÍ VA LA CONEXIÓN AL SMART CONTRACT
+                console.log(`Ejecutando contrato para: ${userAddress}`);
+                console.log(`Bloquear ${currentChallenge.monto_dca} ${currentChallenge.token}`);
                 return new Promise(resolve => setTimeout(resolve, 3000));
               }}
             />
@@ -111,7 +123,6 @@ function ChatDashboard({ onNavigate }) {
         </div>
       </footer>
 
-      {/* ... (barra de navegación footer) ... */}
       <nav className="app-bottom-nav">
         <a href="#" className="nav-item" onClick={(e) => { e.preventDefault(); onNavigate('vaults'); }}><div className="dashed-circle">🏛️</div><span>Bóvedas</span></a>
         <a href="#" className="nav-item active" onClick={(e) => { e.preventDefault(); }}><div className="dashed-circle chat-icon">💬</div><span>Chat</span></a>
