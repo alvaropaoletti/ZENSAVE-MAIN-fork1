@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import InterventionCard from './InterventionCard';
 
-// 🚀 AÑADIDO: Recibimos userAddress y userData como props
 function ChatDashboard({ onNavigate, userAddress, userData }) {
   const [inputValue, setInputValue] = useState('');
   const [messages, setMessages] = useState([
@@ -12,61 +11,68 @@ function ChatDashboard({ onNavigate, userAddress, userData }) {
 
   const handleSend = async () => {
     if (!inputValue.trim()) return;
-
     const userText = inputValue;
     setInputValue('');
-    
     setMessages(prev => [...prev, { type: 'user', text: userText }]);
     setIsTyping(true);
     setCurrentChallenge(null);
-
     try {
-      const response = await fetch('http://127.0.0.1:5000/api/analyze', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        const response = await fetch('https://meaty-unreferenced-dimple.ngrok-free.dev/api/analyze', {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'ngrok-skip-browser-warning': 'true'
+        },
         body: JSON.stringify({ message: userText })
       });
-
       if (!response.ok) throw new Error("Error en el servidor");
-
       const data = await response.json();
       setCurrentChallenge(data);
-
-    } catch (error) {
+    }  catch (error) {
       console.error("Error conectando con Flask:", error);
-      setMessages(prev => [...prev, { type: 'ai', text: "Lo siento, tuve un problema de conexión. ¿Puedes intentar de nuevo?" }]);
+      setMessages(prev => [...prev, { 
+        type: 'ai', 
+        text: "ERROR: " + error.message 
+      }]);
     } finally {
       setIsTyping(false);
     }
   };
 
-  // 🛠️ Función auxiliar para acortar la dirección si no hay Alias
   const formatAddress = (addr) => {
     if (!addr) return "Desconectado";
     return `${addr.substring(0, 6)}...${addr.substring(addr.length - 4)}`;
   };
 
+  // ✅ Nombre a mostrar — alias tiene prioridad, luego dirección, luego "Conectando..."
+  const displayName = userData?.alias
+    ? `@${userData.alias}`
+    : userAddress
+      ? formatAddress(userAddress)
+      : "Conectando...";
+
   return (
     <section className="app-screen active chat-screen">
       <header className="app-header">
-        
-        {/* 🚀 MODIFICADO: Avatar dinámico con el Alias o la Dirección */}
         <div className="header-left" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <img src="https://api.dicebear.com/7.x/identicon/svg?seed=Alejandro" alt="Avatar" className="user-avatar" style={{ borderRadius: '50%', width: '40px' }} />
+          <img 
+            src={`https://api.dicebear.com/7.x/identicon/svg?seed=${userData?.alias || userAddress || 'guest'}`} 
+            alt="Avatar" 
+            className="user-avatar" 
+            style={{ borderRadius: '50%', width: '40px', border: '2px solid #00E676' }} 
+          />
         </div>
-        
         <div className="header-center">
-          {/* 🚀 MODIFICADO: Mostramos el Alias (si existe) o la dirección de la billetera conectada */}
-          <span className="balance-label">USUARIO CONECTADO</span>
-          <span className="balance-value" style={{ fontSize: '14px' }}>
-            {userData?.alias || formatAddress(userAddress)}
+          <span className="balance-label">SESIÓN ACTIVA</span>
+          <span className="balance-value" style={{ fontSize: '16px', fontWeight: 'bold', color: '#00E676' }}>
+            {displayName}
           </span>
         </div>
-        
         <div className="header-right">
-          <button className="wallet-icon">
-            <span title={userAddress}>🟢</span> {/* Indicador visual de conexión */}
-          </button>
+          <div className="wallet-status" style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+            <span style={{ fontSize: '10px', color: '#888' }}>RSK</span>
+            <span style={{ color: userAddress ? '#00E676' : '#ff4444' }}>●</span>
+          </div>
         </div>
       </header>
 
@@ -77,36 +83,26 @@ function ChatDashboard({ onNavigate, userAddress, userData }) {
 
       <main className="chat-container">
         <div className="chat-messages">
-          
           {messages.map((msg, index) => (
             <div key={index} className={`message ${msg.type === 'ai' ? 'ai-message' : 'user-message'}`}>
-              <div className="message-content">
-                <p>{msg.text}</p>
-              </div>
+              <div className="message-content"><p>{msg.text}</p></div>
             </div>
           ))}
-
           {isTyping && (
             <div className="message ai-message">
-              <div className="message-content">
-                <p>...</p>
-              </div>
+              <div className="message-content"><p>...</p></div>
             </div>
           )}
-
           {currentChallenge && (
             <InterventionCard 
               emotionText={currentChallenge.emotionText}
               proposalText={currentChallenge.proposalText}
               onAcceptReto={async () => {
-                // AQUÍ VA LA CONEXIÓN AL SMART CONTRACT
                 console.log(`Ejecutando contrato para: ${userAddress}`);
-                console.log(`Bloquear ${currentChallenge.monto_dca} ${currentChallenge.token}`);
                 return new Promise(resolve => setTimeout(resolve, 3000));
               }}
             />
           )}
-
         </div>
       </main>
 

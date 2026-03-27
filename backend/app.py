@@ -24,7 +24,6 @@ AVAILABLE_MODEL = "gemini-1.5-flash" # Fallback por defecto
 try:
     for m in genai.list_models():
         if 'generateContent' in m.supported_generation_methods:
-            # Guardamos el primer modelo válido que encontremos (ej: gemini-2.0-flash, gemini-pro, etc)
             AVAILABLE_MODEL = m.name.replace('models/', '')
             print(f"✅ ¡Modelo detectado exitosamente!: {AVAILABLE_MODEL}")
             break
@@ -33,7 +32,6 @@ except Exception as e:
 
 # Inicializar modelo
 model = genai.GenerativeModel(AVAILABLE_MODEL)
-
 
 # Cerebro
 SYSTEM_PROMPT = """
@@ -62,9 +60,7 @@ def analyze_expense():
 
         print(f"Analizando gasto: {user_message}")
 
-        
         response = model.generate_content(f"{SYSTEM_PROMPT}\n\nGasto del usuario: {user_message}")
-        
         
         clean_text = response.text.strip()
         if clean_text.startswith('```json'):
@@ -78,11 +74,9 @@ def analyze_expense():
         print(f"Error en el servidor: {e}")
         return jsonify({"error": "Hubo un problema procesando tu gasto con la IA."}), 500
 
-# Endpoint de prueba para verificar que el servidor corre
 @app.route('/ping', methods=['GET'])
 def ping():
     return jsonify({"status": "Zen-Save Backend Online 🌿"}), 200
 
 if __name__ == '__main__':
-    # Correr en puerto 5000
     app.run(debug=True, port=5000)
